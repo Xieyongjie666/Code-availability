@@ -1,0 +1,716 @@
+####ROC 
+library(pROC)
+library(ggplot2)
+library(ggsci)
+rt<- read.csv("validation.csv", sep=",", header=T) #read
+Post<-roc(rt$status1,rt$post,smooth=TRUE)  #ROC curve
+Post2<-roc(rt$status1,rt$post2) 
+Pre1<-roc(rt$status1,rt$pre1)
+Pre2<-roc(rt$status1,rt$pre2)
+plot(Post,  # build ROC对象
+     print.auc=TRUE,col = "red", # AUC value
+     print.auc.x=0.4,print.auc.y=0.45, # AUC值坐标为(x，y)
+     legacy.axes=TRUE)  
+
+plot.roc(Post2,
+         add=TRUE, 
+         col = "dark green", 
+         print.auc=TRUE, 
+         print.auc.col = "dark green", 
+         print.auc.x=0.4,print.auc.y=0.35)  
+
+plot.roc(Pre1,
+         add=TRUE,  
+         col = "blue", 
+         print.auc=TRUE, 
+         print.auc.col = "blue", 
+         print.auc.x=0.4,print.auc.y=0.25) 
+plot.roc(Pre2,
+         add=TRUE,  
+         col = "orange", 
+         print.auc=TRUE, 
+         print.auc.col = "orange", 
+         print.auc.x=0.4,print.auc.y=0.15) 
+
+legend(1,1.15,  
+       bty = "n",  
+       title="",   
+       legend=c("Post"),  
+       col=c("red"), 
+       lwd=2)  
+legend(1,1.09,  
+       bty = "n",  
+       title="",   
+       legend=c("Post2"),  
+       col=c("dark green"), 
+       lwd=2) 
+legend(1,1.15,  
+       bty = "n",  
+       title="",   
+       legend=c("Post"),  
+       col=c("red"), 
+       lwd=2)  
+legend(1,1.09,  
+       bty = "n",  
+       title="",   
+       legend=c("Post2"),  
+       col=c("dark green"), 
+       lwd=2)
+
+
+####build lasso cox
+library(survival)
+library(glmnet)
+rt1<- read.csv("lasso1.csv", sep=",", header=T) 
+rt<- read.csv("new.csv", sep=",", header=T)
+set.seed(2) 
+x=as.matrix(rt[c(11:100)])
+y=data.matrix(Surv(rt$OS,rt$Status))
+y=data.matrix(Surv(rt$OS))
+fit=glmnet(x, y, family = "cox", maxit = 1000)
+plot(fit, xvar = "lambda", label = TRUE)
+print(fit)
+lasso.coef<-predict(fit,s=0.05,type="coefficients")
+lasso.coef
+set.seed(123)
+fitCV<-cv.glmnet(x,y,family="cox",type.measure="deviance",nfolds=5)
+plot(fitCV)
+fitCV
+#### 
+library(survival)
+library("survminer")
+library(ggplot2)
+library(ggpubr)
+
+rt=read.table("OV2.txt",header=T,sep="\t")
+rt=rt[200:300,]
+diff=survdiff(Surv(OS,Event) ~RiskScore,data = rt) 
+pValue=1-pchisq(diff$chisq,df=1)
+pValue=signif(pValue,4)
+pValue=format(pValue, scientific = TRUE)
+fit <- survfit(Surv(OS,Event) ~RiskScore,data = rt)
+ggsurvplot(fit, 
+           data=rt,
+           conf.int=TRUE,
+           pval=paste0("p=",pValue),
+           pval.size=4,
+           risk.table=TRUE,
+           legend.labs=c("Low", "High"),
+           legend.title="Risk",
+           xlab="Time(days)",
+           break.time.by = 300,
+           risk.table.title="",
+           palette=c("#E7B800", "#2E9FDF"),
+           risk.table.height=.25)
+
+
+install.packages("pheatmap")#
+install.packages("WGCNA")#
+
+library(pheatmap)#
+data<-read.table("LNCRNA-TOP.txt",header=TRUE,row.names=1,sep="t",check.names=F,quote="")#???????????????
+
+pheatmap(data,filename = "test.png") 
+pheatmap(data,filename = "test.png") 
+
+annotation_col
+saveRDS(data3,file='F:/R??????????????????/MF.rds')
+colgroup=read.table("GROUP1.txt",sep="t",header=F,row.names=1,check.names=F,quote="")
+
+colnames(colgroup)=c("expression grade","Sex","New_Event","alcohol history documented","Event","T stage","N stage","Clinical Stage")#
+
+pheatmap(TCGA.COAD1,fontsize=7,annotation_col = colgroup,show_colnames=F,cluster_row=FALSE,cluster_col=FALSE, filename = "TCGA.COAD1.tiff")
+pheatmap(TCGA.COAD2,fontsize=7,annotation_col = colgroup,show_colnames=F,cluster_row=FALSE,cluster_col=FALSE, filename = "TCGA.COAD2.tiff")
+pheatmap(TCGA.NECK3,fontsize=7,annotation_col = colgroup,show_colnames=F,cluster_row=FALSE,cluster_col=FALSE, filename = "TCGA.COAD3.tiff")
+##Corelation analysis
+corr<-round(cor(t(data1)),3)
+p.mat<-round(cor_pmat(t(data1)),3)
+ggcorrplot(corr,method="circle",hc.order=TRUE,hc.method="ward.D",outline.col = "white",ggtheme=theme_bw(),type="upper",colors=c("#6D9EC1","white","#E46726"),lab=TRUE,lab_size=2,p.mat=p.mat,insig="blank")
+corrplot(corr,tl.cex=0.7,tl.col="black")
+
+
+library(ggplot2)
+rm(list=ls())
+kegg <- read.csv("KEGG-enrich.csv",stringsAsFactors=F)
+kegg <- kegg[order(kegg$p.adjust),]
+kegg <- kegg[1:10,]
+top10 <- data.frame(kegg$Description,kegg$Count ,kegg$p.adjust)
+colnames(data1) <- c("Description","Count","padj")
+p <- ggplot(data=data1,aes(x=Description,y=Count,fill=P.adjust))
+p1 <- p + geom_bar(stat="identity") + coord_flip()
+p2 <- p1 + theme(panel.background=element_rect(fill='transparent',color='gray'),
+                 axis.text.y=element_text(color="black",size=12))
+p3 <- p2 + ylim(0,12) + scale_fill_gradient(low="red",high="blue")
+p4 <- p3 + scale_x_discrete(limits=rev(data1[,1])) +labs(x="",y="",title="GO.BP")
+tiff("KEGG_bar_plot.tiff",width=680,height=480)
+print(p4)
+dev.off()
+p4
+pdf("KEGG_bar_plot.pdf",width=9)
+print(p4)
+dev.off()
+
+
+#WGCNA
+if(!"GO.db"%in%installed.packages())
+BiocManager::install("GO.db")
+# if(!"flashClust"%in%installed.packages())
+BiocManager::install("flashClust")
+# 
+if(!"WGCNA"%in%installed.packages())
+BiocManager::install("WGCNA")
+# 
+if(!"WGCNA"%in%installed.packages())
+BiocManager::install("WGCNA")
+#org.Hs.eg.db
+if(!"org.Hs.eg.db"%in%installed.packages())
+BiocManager::install("org.Hs.eg.db")
+library('WGCNA')
+library('WGCNA')
+# org.Hs.eg.db
+if(!"org.Hs.eg.db"%in%installed.packages())
+BiocManager::install("org.Hs.eg.db")
+# clusterProfiler
+if(!"clusterProfiler"%in%installed.packages())
+BiocManager::install("clusterProfiler")
+# rlang
+BiocManager::install("rlang")
+# source("installAnRichment.R")
+installAnRichment()
+installAnRichment()
+installAnRichment()
+library('TxDb.Mmusculus.UCSC.mm10.knownGene')
+rm(list = ls())
+library(WGCNA)
+fpkm = read.table("data/fpkm.txt", header = T, row.names = 1, check.names = F)
+View(fpkm)
+View(fpkm)
+## 
+## fpkm_sd = apply(fpkm,1,sd)### 
+fpkm_sd_sorted = order(fpkm_sd, decreasing = T)
+## 
+fpkm_num = fpkm_sd_sorted[1:5000]
+View(fpkm)
+
+fpkm_sd = apply(fpkm,1,sd)fpkm_sd_sorted = order(fpkm_sd, decreasing = T)
+## 5000fpkm_num = fpkm_sd_sorted[1:5000]
+## 
+fpkm_filter = fpkm[fpkm_num,]
+View(fpkm_filter)
+## WGCNA_matrix = t(fpkm_filter)
+View(WGCNA_matrix)
+### rm(list = ls())
+#load(file = "data/Step01-fpkm_mad_filter.Rda")
+# library(WGCNA)
+datExpr0 = WGCNA_matrix
+gsg = goodSamplesGenes(datExpr0, verbose = 3)
+View(gsg)
+View(gsg)
+sampleTree = hclust(dist(datExpr0), method = "average");plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
+cex.axis = 1.5, cex.main = 2)
+?
+clust = cutreeStatic(sampleTree, cutHeight = 120, minSize = 10)
+table(clust)
+# clustkeepSamples = (clust==1)
+datExpr = datExpr0[keepSamples, ]
+nGenes = ncol(datExpr)#nSamples = nrow(datExpr)
+nGenes
+nSamples
+#rm(list = ls())
+#
+library(WGCNA)
+# enableWGCNAThreads()
+# load("data/Step01-WGCNA_input.Rda")
+# sft = pickSoftThreshold(datExpr, powerVector = powers, verbose = 5)
+### powers = c(c(1:10), seq(from = 12, to=20, by=2))
+# sft = pickSoftThreshold(datExpr, powerVector = powers, verbose = 5)
+# plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+main = paste("Scale independence"));
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+labels=powers,cex=cex1,col="red");
+cex1 = 0.9;
+plot(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+xlab="Soft Threshold (power)",ylab="Scale Free Topology Model Fit,signed R^2",type="n",
+main = paste("Scale independence"));
+text(sft$fitIndices[,1], -sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+labels=powers,cex=cex1,col="red");
+sft
+sft$powerEstimate
+sft$powerEstimate
+net = blockwiseModules(datExpr, #power = sft$powerEstimate,TOMType = "unsigned", nsignedminModuleSize = 30,reassignThreshold = 0, mergeCutHeight = 0.25,?
+numericLabels = TRUE, #truepamRespectsDendro = FALSE,saveTOMs = TRUE,saveTOMFileBase = "data/Step02-fpkmTOM",
+verbose = 3)#0net = blockwiseModules(datExpr, power = sft$powerEstimate
+TOMType = "unsigned", #nsignedminModuleSize = 30,#
+reassignThreshold = 0, #mergeCutHeight = 0.25,#
+numericLabels = TRUE, #truepamRespectsDendro = FALSE,#saveTOMs = TRUE,#saveTOMFileBase = "data/Step02-fpkmTOM",
+verbose = 3)#0plotEigengeneNetworks(MEs, "", marDendro = c(0,4,1,2),
+marHeatmap = c(3,4,1,2), cex.lab = 0.8,
+xLabelsAngle = 90)
+#MEs = moduleEigengenes(datExpr, mergedColors)$eigengenes
+#mergedColors = labels2colors(net$colors)
+### rm(list = ls())
+#load(file = "data/Step01-fpkm_mad_filter.Rda")
+#
+library(WGCNA)
+# 
+datExpr0 = WGCNA_matrix
+gsg = goodSamplesGenes(datExpr0, verbose = 3)
+gsg$allOK
+###sampleTree = hclust(dist(datExpr0), method = "average");#plot(sampleTree, main = "Sample clustering to detect outliers", sub="", xlab="", cex.lab = 1.5,
+cex.axis = 1.5, cex.main = 2)
+# abline(h = 120, col = "red")#dev.off()
+# clust = cutreeStatic(sampleTree, cutHeight = 120, minSize = 10)
+table(clust)
+# rm(list = ls())
+par(mfrow = c(1,2))
+mfrow
+par(mfrow = c(1,2))
+par(mfrow = c(1,2))#cex1 = 0.9;
+# plot(sft$fitIndices[,1],
+-sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+xlab="Soft Threshold (power)",#x杞?
+ylab="Scale Free Topology Model Fit,signed R^2",type="n",#y杞?
+main = paste("Scale independence"));#text(sft$fitIndices[,1],
+-sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+labels=powers,
+cex=cex1,
+col="red");
+# 
+rm(list = ls())
+#library(WGCNA)
+# enableWGCNAThreads()
+# load("data/Step01-WGCNA_input.Rda")
+###  ###
+powers = c(c(1:10), seq(from = 12, to=20, by=2))
+# sft = pickSoftThreshold(datExpr, powerVector = powers, verbose = 5)#sizeGrWindow(9, 5)
+par(mfrow = c(1,2))#cex1 = 0.9;
+# plot(sft$fitIndices[,1],
+-sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+xlab="Soft Threshold (power)",#x杞?
+ylab="Scale Free Topology Model Fit,signed R^2",type="n",#y杞?
+main = paste("Scale independence"));#
+text(sft$fitIndices[,1],
+-sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+labels=powers,
+cex=cex1,
+col="red");
+# abline(h=0.90,col="red")
+View(sft)
+sft$fitIndices[,1]
+sft$fitIndices[,5]
+# 
+sizeGrWindow(9, 5)
+par(mfrow = c(1,2))#
+cex1 = 0.9;
+#
+plot(sft$fitIndices[,1],
+-sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+xlab="Soft Threshold (power)",#x杞?
+ylab="Scale Free Topology Model Fit,signed R^2",type="n",#y杞?
+main = paste("Scale independence"));#
+View(sft[["fitIndices"]])
+View(sft)
+sft$fitIndices[,1]
+-sign(sft$fitIndices[,3])*sft$fitIndices[,2]
+text(sft$fitIndices[,1],
+-sign(sft$fitIndices[,3])*sft$fitIndices[,2],
+labels=powers,
+cex=cex1,
+col="red");
+powers
+View(sft[["fitIndices"]])
+# 
+plot(sft$fitIndices[,1],
+sft$fitIndices[,5],
+xlab="Soft Threshold (power)",
+ylab="Mean Connectivity",
+type="n",
+main = paste("Mean connectivity"))
+text(sft$fitIndices[,1],
+sft$fitIndices[,5],
+labels=powers,
+cex=cex1,
+col="red")
+View(sft[["fitIndices"]])
+#softpower=sft$powerEstimate
+View(datExpr)
+cor(datExpr,use="p")
+# softpower=sft$powerEstimate
+softpower
+ADJ = abs(cor(datExpr,use="p"))^softpower
+View(ADJ)
+View(datExpr)
+scaleFreePlot(k,main="Check scale free topology")
+k = as.vector(apply(ADJ,2,sum,na.rm=T))#scaleFreePlot(k,main="Check scale free topology")
+hist(k)k
+### ###
+net = blockwiseModules(datExpr, #power = sft$powerEstimate,#
+TOMType = "unsigned", #nsignedminModuleSize = 30,#
+reassignThreshold = 0, #
+mergeCutHeight = 0.25,#numericLabels = TRUE, #pamRespectsDendro = FALSE,#saveTOMs = TRUE,#
+saveTOMFileBase = "data/Step02-fpkmTOM",
+verbose = 3)## 
+load(file = "data/Step02-One_step_net.Rda")
+# sizeGrWindow(12, 9)
+# 
+mergedColors = labels2colors(net$colors)
+mergedColors
+#plotDendroAndColors(dendro = net$dendrograms[[1]], #colors = mergedColors[net$blockGenes[[1]]],#
+groupLabels = "Module colors",#dendroLabels = FALSE, #false,
+hang = 0.03,#addGuide = TRUE, #guideHang = 0.05,#
+main = "Gene dendrogram and module colors")
+load("data/Step02-fpkmTOM-block.1.RData")
+mergedColors
+eigengenes
+MEs = moduleEigengenes(datExpr, mergedColors)$eigengenes
+MEs = orderMEs(MEs)
+plotEigengeneNetworks(MEs, "", marDendro = c(0,4,1,2),
+marHeatmap = c(3,4,1,2), cex.lab = 0.8,
+xLabelsAngle = 90)
+dissTOM = 1-TOMsimilarityFromExpr(datExpr, power = sft$powerEstimate); 
+nGenes
+nSelect = 400
+set.seed(10);
+select = sample(nGenes, size = nSelect);
+selectTOM = dissTOM[select, select];
+rm(list = ls())
+
+library(WGCNA)
+enable WGCNA Threads()
+load("data/Step01-WGCNA_input.Rda")
+powers = c(c(1:10), seq(from = 12, to=20, by=2))
+merge = mergeCloseModules(datExpr, dynamicColors,
+cutHeight = MEDissThres, verbose=3);
+rm(list = ls())
+library(WGCNA)
+enableWGCNAThreads()
+load("data/Step01-WGCNA_input.Rda")
+powers = c(c(1:10), seq(from = 12, to=20, by=2))
+pickSoftThreshold(datExpr, powerVector=powers)
+RpowerTable=pickSoftThreshold(datExpr, powerVector=powers)
+View(RpowerTable)
+RpowerTable=pickSoftThreshold(datExpr, powerVector=powers)[[2]]
+RpowerTable=pickSoftThreshold(datExpr, powerVector=powers)[[2]]
+View(RpowerTable)
+RpowerTable=pickSoftThreshold(datExpr, powerVector=powers)
+View(RpowerTable)
+View(RpowerTable[["fitIndices"]])
+adjacency = adjacency(datExpr,power=softpower)
+softpower=7
+adjacency = adjacency(datExpr,power=softpower)
+TOM = TOMsimilarity(adjacency)
+dissTOM = 1- TOM
+library(flashClust)
+geneTree = flashClust(as.dist(dissTOM),method="average")
+plot(geneTree,xlab="",sub="",main="Gene clustering on TOM-based",labels=FALSE,hang=0.04)
+minModuleSize=30 
+dynamicMods = cutreeDynamic(dendro = geneTree,#hclust
+distM = dissTOM,#
+deepSplit = 2,
+pamRespectsDendro = FALSE,
+minClusterSize = minModuleSize)# 
+dynamicColors = labels2colors(dynamicMods)
+dynamicColors
+table(dynamicColors)
+plotDendroAndColors(dendro = geneTree,
+colors = dynamicColors,
+groupLabels = "Dynamic Tree Cut",
+dendroLabels = FALSE, hang = 0.03,
+addGuide = TRUE,
+main = "Gene dendrogram and module colors")
+# 
+MEList = moduleEigengenes(datExpr,colors=dynamicColors)# 
+MEs = MEList$eigengenes;# 
+MEDiss1 = 1-cor(MEs);#
+METree1 = flashClust(as.dist(MEDiss1),method="average")#
+MEDissThres = 0.25; 
+merge = mergeCloseModules(datExpr, #
+dynamicColors,
+cutHeight = MEDissThres,
+verbose=3);
+mergedColors = merge$colors;
+mergedColors
+table(mergedColors)
+table(dynamicColors)#
+table(mergedColors)# 
+table(dynamicColors)#
+View(merge)
+mergedMEs = merge$newMEs# 
+par(mfrow=c(1,2))
+plot(METree1,xlab="",sub="",main="Clustering of ME before combined")# METree1
+abline(h=MEDissThres,col="red")
+plot(METree2,xlab="",sub="",main="Clustering of ME after combined")# METree2
+par(mfrow=c(1,2))
+plot(METree1,xlab="",sub="",main="Clustering of ME before combined")# METree1
+abline(h=MEDissThres,col="red")#
+plot(METree2,xlab="",sub="",main="Clustering of ME after combined")# METree2 
+moduleColors = mergedColors;
+colorOrder = c("grey",standardColors(50));
+moduleLabels = match(moduleColors,colorOrder)-1;
+MEs = mergedMEs;
+MEDiss2 = 1-cor(MEs);#
+METree2 = flashClust(as.dist(MEDiss2),method="average");#
+par(mfrow=c(1,2))
+plot(METree1,xlab="",sub="",main="Clustering of ME before combined")# METree1
+abline(h=MEDissThres,col="red")
+plot(METree2,xlab="",sub="",main="Clustering of ME after combined")# METree2
+plotDendroAndColors(dendro = geneTree,
+colors = dynamicColors,
+groupLabels = "Dynamic Tree Cut",
+dendroLabels = FALSE, hang = 0.03,
+addGuide = TRUE,
+main = "Gene dendrogram and module colors")
+plotDendroAndColors(dendro = geneTree,
+colors = cbind(dynamicColors,mergedColors), 
+groupLabels = c("Dynamic Tree Cut","Merged Dynamics"),
+dendroLabels = FALSE,
+hang = 0.03,
+addGuide=TRUE,
+guideHang=0.05,
+main="Gene Dendrogram and module colors")
+load("data/Step01-WGCNA_input.Rda")
+load(file="data/Step03-Step_by_step_buildnetwork.rda")
+MEs = orderMEs(MEs)
+plotEigengeneNetworks(MEs, "", marDendro = c(0,4,1,2),
+marHeatmap = c(3,4,1,2), cex.lab = 0.8,
+xLabelsAngle = 90)
+rm(list = ls())
+library(WGCNA)
+load("data/Step01-WGCNA_input.Rda")
+View(datExpr)
+plotDendroAndColors(sampleTree2, traitColors,
+groupLabels = names(datTraits),
+main = "Sample dendrogram and trait heatmap")
+
+
+#GSEA
+library(plyr)
+library(ggplot2)
+library(grid)
+library(gridExtra)
+
+setwd("D:\\RSTUDIO\\GSEA.R.version1")          # 
+files=grep(".xls",dir(),value=T)                                         #
+data = lapply(files,read.delim)                                          #
+names(data) = files
+
+dataSet = ldply(data, data.frame)
+dataSet$pathway = gsub(".xls","",dataSet$.id)                            #
+
+gseaCol=c("#58CDD9","#7A142C","#5D90BA","#431A3D","#91612D","#6E568C","#E0367A","#D8D155","#64495D","#7CC767","#223D6C","#D20A13","#FFD121","#088247","#11AA4D")
+pGsea=ggplot(dataSet,aes(x=RANK.IN.GENE.LIST,y=RUNNING.ES,colour=pathway,group=pathway))+
+  geom_line(size = 1.5) + scale_color_manual(values = gseaCol[1:nrow(dataSet)]) +   
+  labs(x = "", y = "Enrichment Score", title = "") + scale_x_continuous(expand = c(0, 0)) + 
+  scale_y_continuous(expand = c(0, 0),limits = c(min(dataSet$RUNNING.ES - 0.02), max(dataSet$RUNNING.ES + 0.02))) +   
+  theme_bw() + theme(panel.grid = element_blank()) + theme(panel.border = element_blank()) + theme(axis.line = element_line(colour = "black")) + theme(axis.line.x = element_blank(),axis.ticks.x = element_blank(),axis.text.x = element_blank()) + 
+  geom_hline(yintercept = 0) +   theme(legend.position = c(0,0),legend.justification = c(0,0)) + #legend 
+  guides(colour = guide_legend(title = NULL)) + theme(legend.background = element_blank()) + theme(legend.key = element_blank())+theme(legend.key.size=unit(0.5,'cm'))
+pGene=ggplot(dataSet,aes(RANK.IN.GENE.LIST,pathway,colour=pathway))+geom_tile()+
+  scale_color_manual(values = gseaCol[1:nrow(dataSet)]) + 
+  labs(x = "high expression<----------->low expression", y = "", title = "") + 
+  scale_x_discrete(expand = c(0, 0)) + scale_y_discrete(expand = c(0, 0)) +  
+  theme_bw() + theme(panel.grid = element_blank()) + theme(panel.border = element_blank()) + theme(axis.line = element_line(colour = "black"))+
+  theme(axis.line.y = element_blank(),axis.ticks.y = element_blank(),axis.text.y = element_blank())+ guides(color=FALSE)
+
+gGsea = ggplot_gtable(ggplot_build(pGsea))
+gGene = ggplot_gtable(ggplot_build(pGene))
+maxWidth = grid::unit.pmax(gGsea$widths, gGene$widths)
+gGsea$widths = as.list(maxWidth)
+gGene$widths = as.list(maxWidth)
+dev.off()
+
+#
+pdf('multipleGSEA.pdf',     
+     width=7,                #
+     height=5.5)             #
+par(mar=c(5,5,2,5))
+grid.arrange(arrangeGrob(gGsea,gGene,nrow=2,heights=c(.8,.3)))
+dev.off()
+
+
+# 
+library(rms)
+library(ggrisk)
+LIRI<-read.delim("newMODELtxt",header=TRUE,sep="\t",check.names=F,quote="")
+
+#build cox
+fit<-cph(Surv(OS,Status)~a5+a11+a7+a12+a14+a28+a26+a24,LIRI)
+fit<-cph(Surv(OS,Status)~a12+a32+a75+a86+a14+a47,LIRI)
+
+
+fit1<-cph(Surv(OS,Event)~RiskScore+Stage,LIRI)
+fit2<-cph(Surv(OS,Event)~RiskScore,LIRI)
+
+fit
+ggrisk(fit,new.data=LIRI,     
+  cutoff.value='median',
+       cutoff.x=145,#cutoff    
+   cutoff.y=-0.8,
+       code.0='Still Alive',#    
+   code.1='Already Dead',
+       code.highrisk='High Risk',    
+   code.lowrisk='Low Risk',
+       title.A.ylab='Risk Score',     
+
+  title.B.ylab='Survival Time(year)',   
+    title.A.legend='Risk Group',#
+       title.B.legend='Status',#
+       title.c.legend='Expression')
+# 
+ggrisk(fit,new.data=LIRI,#
+      cutoff.value='median',#     
+  cutoff.x=145,#cutoff    
+   cutoff.y=-0.8,
+       code.0='Still Alive',#      
+ code.1='Already Dead',
+       code.highrisk='High Risk'     
+  code.lowrisk='Low Risk',
+       title.A.ylab='Risk Score',   
+title.B.ylab='Survival Time(year)',     
+  title.A.legend='Risk Group',     
+  title.B.legend='Status')       
+ggrisk(fit)
+
+
+#GOPlot
+remove(list=ls())
+
+library(clusterProfiler)
+library(GOplot)
+
+# 
+pro <- read.table("GOplot_input.txt",
+                       sep="\t",header=T,check.names=F)
+# 
+GO_Enrichment <- read.table("data/GO_result_for_GOplot_input.txt",
+                       sep="\t",header=T,check.names=F)
+# 
+circ <- circle_dat(GO_Enrichment, genelist)
+
+head(circ)
+
+# 
+tiff(file="figures/GOplot_GOBar.tiff",
+     width = 35,height = 22,units ="cm",
+     compression="lzw",bg="white",res=300)
+GOBar(subset(circ, category == 'BP'))
+dev.off()
+
+GOBar(circ, display = 'multiple')
+GOBar(circ, display = 'multiple', title = 'Z-score coloured barplot', zsc.col = c('yellow', 'black', 'cyan'))
+
+########## ##########
+GOBubble(circ, labels = 3)
+
+tiff(file="figures/GOplot_GOBubble1.tiff",
+     width = 35,height = 22,units ="cm",
+     compression="lzw",bg="white",res=300)
+#
+reduced_circ <- reduce_overlap(circ, overlap = 0.75)
+GOBubble(reduced_circ, labels = 2.8)
+dev.off()
+
+GOBubble(circ, title = 'Bubble plot', colour = c('orange', 'darkred', 'gold'), display = 'multiple', labels = 3)  
+
+tiff(file="figures/GOplot_GOBubble2.tiff",
+     width = 35,height = 22,units ="cm",
+     compression="lzw",bg="white",res=300)
+GOBubble(circ, title = 'Bubble plot with background colour', display = 'multiple', bg.col = T, labels = 3)  
+dev.off()
+
+#################
+tiff(file="figures/GOplot_GOBubble2.tiff",
+     width = 35,height = 22,units ="cm",
+     compression="lzw",bg="white",res=300)
+GOCircle(circ)
+dev.off()
+
+# 
+IDs <- c('GO:0007507', 'GO:0001568', 'GO:0001944', 'GO:0048729', 'GO:0048514', 'GO:0005886', 'GO:0008092', 'GO:0008047')
+GOCircle(circ, nsub = IDs)
+
+#
+GOCircle(circ, nsub = 10)
+
+# 
+process <- c("heart development","phosphorylation",
+          "vasculature development","blood vessel development",
+          "tissue morphogenesis","cell adhesion",
+          "plasma membrane")
+# 
+data(EC)
+EC$genes
+# ID      logFC
+# 1      PTK2 -0.6527904
+# 2     GNA13  0.3711599
+# 3      LEPR  2.6539788
+# 4      APOE  0.8698346
+# 5     CXCR4 -2.5647537
+# 6      RECK  3.6926860
+# 7     EFNB2 -1.0007095
+# 8    PNPLA6  0.8906838
+# 9      THY1 -0.5538562
+# 10     CAV1 -0.9567264
+# 11     CDH2  1.2832653
+# 12     CDH5 -0.5147797
+# 13   PLXND1 -1.4831711
+# 14    ECSCR -1.1219161
+# 15    HBEGF  1.1368100
+# 16     AMOT  1.0877881
+# 17   ACVRL1  0.5096903
+# 18     FGF2 -0.5859693
+# 19   MAP2K1 -0.4628798
+# 20     NRP1 -1.1412315
+# 21     GJA1 -0.8179480
+# 22     GJA5 -2.4542500
+# 23    CERKL  0.8624001
+# 24     MIB1 -0.2899698
+# 25   TGFBR2  0.9984773
+# 26   TGFBR3  1.2105366
+# 27    TGFB2  2.3031748
+# 28      TTN -0.6633600
+# 29     GAB1  0.8795894
+# 30 ATP6V0A1  0.9847533
+# 31     NRP2 -1.5153173
+# 32  SLC22A5  0.5032908
+# 33   VANGL2  0.5220569
+# 34    ITGB1 -0.3208476
+# 35     PKD2 -0.6848571
+# 36    SMAD3  0.8885396
+# 37    KCNJ8 -0.6850658
+
+chord <- chord_dat(data = circ, genes = EC$genes, process = process)
+tiff(file="figures/GOplot_GOChord.tiff",
+     width = 35,height = 22,units ="cm",
+     compression="lzw",bg="white",res=300)
+GOChord(chord, space = 0.02, gene.order = 'logFC', gene.space = 0.25, gene.size = 5)
+dev.off()
+
+########## 
+GOHeat(chord[,-8], nlfc = 0)
+
+tiff(file="figures/GOplot_GOHeat.tiff",
+     width = 35,height = 22,units ="cm",
+     compression="lzw",bg="white",res=300)
+# 
+GOHeat(chord, nlfc = 1, fill.col = c('red', 'yellow', 'green'))
+dev.off()
+########## #########
+GOCluster(circ, process, clust.by = 'logFC', term.width = 2)
+
+tiff(file="figures/GOplot_GOCluster.tiff",
+     width = 35,height = 22,units ="cm",
+     compression="lzw",bg="white",res=300)
+GOCluster(circ, process, clust.by = 'term', lfc.col = c('darkgoldenrod1', 'black', 'cyan1'))
+dev.off()
+
+########
+l1 <- subset(circ, term == 'heart development', c(genes,logFC))
+l2 <- subset(circ, term == 'plasma membrane', c(genes,logFC))
+l3 <- subset(circ, term == 'tissue morphogenesis', c(genes,logFC))
+tiff(file="figures/GOplot_GOVenn.tiff",
+     width = 35,height = 22,units ="cm",
+     compression="lzw",bg="white",res=300)
+GOVenn(l1,l2,l3, label = c('heart development', 'plasma membrane', 'tissue morphogenesis'))
+dev.off()
